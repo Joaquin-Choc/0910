@@ -92,7 +92,7 @@ class SistemaRegistros:
             else:
                 print("Opción inválida." if len(self.registros) >= 15 else "Debe ingresar al menos 15 registros antes de salir.")
 
-# Ejecución del programa
+
 sistema = SistemaRegistros()
 sistema.menu()
     
