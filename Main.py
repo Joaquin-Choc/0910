@@ -1,78 +1,123 @@
-class Registro:
-    def __init__(self, carnet, nombre, carrera, color):
-        self.carnet = carnet
-        self.nombre = nombre
-        self.carrera = carrera
-        self.color = color
+import os
+import struct
 
-    def __repr__(self):
-        return f'Carnet: {self.carnet}, Nombre: {self.nombre}, Carrera: {self.carrera}, Color: {self.color}'
+# Ubicación de los archivos
+CARRERAS_FILE = "carreras.dat"
+ESTUDIANTES_FILE = "estudiantes.dat"
 
-class SistemaRegistros:
-    def __init__(self):
-        self.registros = []
 
-    def carnet_existe(self, carnet):
-        """Verifica si el carnet ya está registrado."""
-        for registro in self.registros:
-            if registro.carnet == carnet:
+def carnet_existe(carnet):
+    if os.path.exists(ESTUDIANTES_FILE):
+        file = os.open(ESTUDIANTES_FILE, os.O_RDONLY)  
+        while True:
+            data = os.read(file, 65)  
+            if not data:
+                break
+            registro_carnet = struct.unpack('10s30s15s10s', data)[0].decode().strip()
+            if registro_carnet == carnet:
+                os.close(file)
                 return True
-        return False
+        os.close(file)
+    return False
 
-    def agregar_registro(self):
+
+def agregar_carrera():
+    codigo = input("Ingrese el código de la carrera: ").ljust(10)  
+    nombre = input("Ingrese el nombre de la carrera: ").ljust(30)  
+
+    file = os.open(CARRERAS_FILE, os.O_RDWR | os.O_CREAT | os.O_APPEND)  
+    os.write(file, struct.pack('10s30s', codigo.encode(), nombre.encode()))  
+    os.close(file)  
+    print("Carrera agregada exitosamente.\n")
+
+
+def agregar_estudiante():
+    while True:
+        carnet = input("Ingrese el carnet del estudiante: ").ljust(10)  
+        if carnet_existe(carnet.strip()):
+            print("El número de carnet ya existe. Ingrese un nuevo número.")
+        else:
+            break
+
+    nombre = input("Ingrese el nombre del estudiante: ").ljust(30)  
+    color = input("Ingrese el color favorito del estudiante: ").ljust(15)  
+    codigo_carrera = input("Ingrese el código de la carrera del estudiante: ").ljust(10) 
+
+    file = os.open(ESTUDIANTES_FILE, os.O_RDWR | os.O_CREAT | os.O_APPEND)  # Abrir archivo en bajo nivel
+    os.write(file, struct.pack('10s30s15s10s', carnet.encode(), nombre.encode(), color.encode(), codigo_carrera.encode()))  # Escribir datos
+    os.close(file)  # Cerrar archivo
+    print("Estudiante agregado exitosamente.\n")
+
+# Función para mostrar carreras
+def mostrar_carreras():
+    if os.path.exists(CARRERAS_FILE):
+        file = os.open(CARRERAS_FILE, os.O_RDONLY)  # Abrir archivo en solo lectura
+        print("\nCarreras actuales:")
         while True:
-            carnet = input("Ingrese el carnet: ")
-            if self.carnet_existe(carnet):
-                print(f"El carnet {carnet} ya existe. Ingrese un número de carnet diferente.")
-            else:
+            data = os.read(file, 40) 
+            if not data:
                 break
-        nombre = input("Ingrese el nombre: ")
-        carrera = input("Ingrese la carrera: ")
-        color = input("Ingrese el color favorito: ")
-        registro = Registro(carnet, nombre, carrera, color)
-        self.registros.append(registro)
-        print("Registro agregado con éxito.")
+            codigo, nombre = struct.unpack('10s30s', data)
+            print(f"Codigo: {codigo.decode().strip()}, Nombre: {nombre.decode().strip()}")
+        os.close(file)  # Cerrar archivo
+    else:
+        print("No hay carreras registradas.\n")
 
-    def buscar_registro(self):
-        carnet = input("Ingrese el carnet a buscar: ")
-        for registro in self.registros:
-            if registro.carnet == carnet:
-                print("Registro encontrado:")
-                print(registro)
-                return
-        print("Registro no encontrado.")
+# Función para mostrar estudiantes con nombre de la carrera
+def mostrar_estudiantes():
+    carreras = {}
 
-
-    def guardar_registros(self):
-        with open("registros.txt", "w") as archivo:
-            for registro in self.registros:
-                archivo.write(f'{registro.carnet}, {registro.nombre}, {registro.carrera}, {registro.color}\n')
-        print("Registros guardados en 'registros.txt'.")
-
-    def menu(self):
+    # Leer carreras primero
+    if os.path.exists(CARRERAS_FILE):
+        file = os.open(CARRERAS_FILE, os.O_RDONLY)  # Abrir archivo en solo lectura
         while True:
-            print("\n--- Sistema de Registros ---")
-            print(f"Total de registros: {len(self.registros)} (mínimo 15 registros)")
-            print("1) Ingresar nuevo registro")
-            print("2) Buscar registro por carnet")
-            print("3) Guardar registros en archivo")
-            if len(self.registros) >= 15:
-                print("4) Salir")
-            opcion = input("Seleccione una opción (1-4): " if len(self.registros) >= 15 else "Seleccione una opción (1-4): ")
-            
-            if opcion == '1':
-                self.agregar_registro()
-            elif opcion == '2':
-                self.buscar_registro()
-            elif opcion == '3':
-                self.guardar_registros()
-            elif opcion == '4' and len(self.registros) >= 15:
-                print("Saliendo del sistema...")
+            data = os.read(file, 40)
+            if not data:
                 break
-            else:
-                print("Opción inválida." if len(self.registros) >= 15 else "Debe ingresar al menos 15 registros antes de salir.")
+            codigo, nombre = struct.unpack('10s30s', data)
+            carreras[codigo.decode().strip()] = nombre.decode().strip()
+        os.close(file)  # Cerrar archivo
 
+    # Leer estudiantes y mostrar información con el nombre de la carrera
+    if os.path.exists(ESTUDIANTES_FILE):
+        file = os.open(ESTUDIANTES_FILE, os.O_RDONLY)  # Abrir archivo en solo lectura
+        print("\nEstudiantes registrados:")
+        while True:
+            data = os.read(file, 65)
+            if not data:
+                break
+            carnet, nombre, color, codigo_carrera = struct.unpack('10s30s15s10s', data)
+            codigo_carrera = codigo_carrera.decode().strip()
+            nombre_carrera = carreras.get(codigo_carrera, "Carrera desconocida")
+            print(f"Carnet: {carnet.decode().strip()}, Nombre: {nombre.decode().strip()}, Color: {color.decode().strip()}, Carrera: {nombre_carrera}")
+        os.close(file)  # Cerrar archivo
+    else:
+        print("No hay estudiantes registrados.\n")
 
-sistema = SistemaRegistros()
-sistema.menu()
-    
+def menu():
+    while True:
+        print("\n--- Sistema Gestor de Estudiantes ---")
+        print("1. Agregar Carrera")
+        print("2. Agregar Estudiante")
+        print("3. Mostrar Carreras")
+        print("4. Mostrar Estudiantes")
+        print("5. Salir")
+
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            agregar_carrera()
+        elif opcion == "2":
+            agregar_estudiante()
+        elif opcion == "3":
+            mostrar_carreras()
+        elif opcion == "4":
+            mostrar_estudiantes()
+        elif opcion == "5":
+            print("Saliendo del sistema...")
+            break
+        else:
+            print("Opción inválida, intente de nuevo.")
+
+if __name__ == "__main__":
+    menu()
