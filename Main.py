@@ -34,6 +34,10 @@ def carnet_existe(carnet):
         os.close(file)
     return False
 
+def carrera_existe(codigo):
+    carreras = obtener_carreras()  # Obtener todas las carreras
+    return codigo in carreras
+
 # Función para obtener todas las carreras
 def obtener_carreras():
     carreras = {}
@@ -58,17 +62,17 @@ def obtener_carreras():
         os.close(file)
     return carreras
 
-# Función para agregar una carrera
+# Función para agregar una carrera 
 def agregar_carrera():
     limpiar_consola()
-    codigo = input("Ingrese el código de la carrera: ")
-    nombre = input("Ingrese el nombre de la carrera: ")
-
-    file = os.open(CARRERAS_FILE, os.O_RDWR | os.O_CREAT | os.O_APPEND)
-    os.write(file, (codigo + SEPARADOR + nombre + '\n').encode())
-    os.close(file)
-    print("\nCarrera agregada exitosamente.")
-    input("\nPresione Enter para volver al menú...")
+    while True:
+        codigo = input("Ingrese el código de la carrera: ")
+        if carrera_existe(codigo):
+            print(f"\nError: El código {codigo} ya existe. Ingrese un nuevo código.")
+            input("\nPresione Enter para continuar...")
+            limpiar_consola()
+        else:
+            break
 
 # Función para agregar un estudiante con validación de carnet y carrera
 def agregar_estudiante():
