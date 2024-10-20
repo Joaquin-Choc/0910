@@ -34,6 +34,10 @@ def carnet_existe(carnet):
         os.close(file)
     return False
 
+def carrera_existe(codigo):
+    carreras = obtener_carreras()  # Obtener todas las carreras
+    return codigo in carreras
+
 # Función para obtener todas las carreras
 def obtener_carreras():
     carreras = {}
@@ -61,14 +65,22 @@ def obtener_carreras():
 # Función para agregar una carrera
 def agregar_carrera():
     limpiar_consola()
-    codigo = input("Ingrese el código de la carrera: ")
+    while True:
+        codigo = input("Ingrese el código de la carrera: ")
+        if carrera_existe(codigo):
+            limpiar_consola()
+            print(f"El código {codigo} ya existe. Ingrese un nuevo código.")
+        else:
+            break
+
     nombre = input("Ingrese el nombre de la carrera: ")
 
     file = os.open(CARRERAS_FILE, os.O_RDWR | os.O_CREAT | os.O_APPEND)
-    os.write(file, (codigo + SEPARADOR + nombre + '\n').encode())
+    os.write(file, (codigo + SEPARADOR + nombre + '\n').encode())  # Escribir en formato de bajo nivel
     os.close(file)
     print("\nCarrera agregada exitosamente.")
     input("\nPresione Enter para volver al menú...")
+    limpiar_consola()
 
 # Función para agregar un estudiante con validación de carnet y carrera
 def agregar_estudiante():
@@ -76,37 +88,40 @@ def agregar_estudiante():
     while True:
         carnet = input("Ingrese el carnet del estudiante: ")
         if carnet_existe(carnet):
+            limpiar_consola()
             print("El número de carnet ya existe. Ingrese un nuevo número.")
         else:
             break
 
     nombre = input("Ingrese el nombre del estudiante: ")
     color = input("Ingrese el color favorito del estudiante: ")
-
+    
     carreras = obtener_carreras()
-
+    
     # Mostrar las carreras disponibles
     if carreras:
         print("\nCarreras disponibles:")
         for codigo, nombre_carrera in carreras.items():
             print(f"Código: {codigo}, Nombre: {nombre_carrera}")
-
+        
         # Validar el código de carrera
         while True:
             codigo_carrera = input("Ingrese el código de la carrera del estudiante: ")
             if codigo_carrera in carreras:
                 break
             else:
-                print("Código de carrera no válido. Ingrese un código de carrera existente.")
-
+                limpiar_consola()
+                print(f"El código de carrera {codigo_carrera} no es válido. Ingrese un código existente.")
+    
         file = os.open(ESTUDIANTES_FILE, os.O_RDWR | os.O_CREAT | os.O_APPEND)
         os.write(file, (carnet + SEPARADOR + nombre + SEPARADOR + color + SEPARADOR + codigo_carrera + '\n').encode())  # Escribir datos
         os.close(file)
         print("\nEstudiante agregado exitosamente.")
     else:
-        print("\nNo hay carreras disponibles. Debe agregar una carrera primero.")
-
+        print("\nError: No hay carreras disponibles. Debe agregar una carrera primero.")
+    
     input("\nPresione Enter para volver al menú...")
+    limpiar_consola()
 
 # Función para mostrar carreras con mejor formato
 def mostrar_carreras():
