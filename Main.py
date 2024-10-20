@@ -120,7 +120,7 @@ def agregar_estudiante():
     else:
         print("\nError: No hay carreras disponibles. Debe agregar una carrera primero.")
     
-    input("\nPresione Enter para volver al menú...")
+    input("\nPresione Enter para continuar...")
     limpiar_consola()
 
 # Función para mostrar carreras con mejor formato
@@ -129,7 +129,7 @@ def mostrar_carreras():
     carreras = obtener_carreras()
 
     if carreras:
-        print("\nCarreras actuales:")
+        print("Carreras actuales:")
         print(f"{'Código':<10} {'Nombre':<30}")
         print("-" * 40)
         for codigo, nombre in carreras.items():
